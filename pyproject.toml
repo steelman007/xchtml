@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xchtml"
+version = "1.0.0"
+description = "Generate beautiful HTML reports from Xcode .xcresult bundles"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.8"
+authors = [
+    { name = "Gram" },
+]
+keywords = ["xcode", "xcresult", "html", "report", "testing", "ios", "macos"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Environment :: MacOS X",
+    "Intended Audience :: Developers",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Software Development :: Quality Assurance",
+]
+
+[project.urls]
+Homepage = "https://github.com/igram7/xchtml"
+Repository = "https://github.com/igram7/xchtml"
+Issues = "https://github.com/igram7/xchtml/issues"
+
+[project.scripts]
+xchtml = "xchtml.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

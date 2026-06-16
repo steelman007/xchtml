@@ -1,141 +1,125 @@
-# XCTest HTML Report Generator(xchtml)
+# xchtml
 
-Generate a clean, shareable HTML dashboard from an Xcode .xcresult bundle.
+Generate beautiful, shareable HTML test reports from Xcode `.xcresult` bundles.
 
-This tool parses test results, metadata, logs, and coverage to produce:
-
-- A main report overview page
-- Per-category report pages
-- A dedicated logs page
-- A dedicated coverage page
+![macOS](https://img.shields.io/badge/platform-macOS-lightgrey)
+![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue)
+![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
 Created by Gram.
 
+## Install
+
+### Homebrew (recommended)
+
+```bash
+brew install igram7/xchtml
+```
+
+### From source
+
+```bash
+git clone https://github.com/igram7/xchtml.git
+cd xchtml
+pip install .
+```
+
+## Usage
+
+```bash
+# Auto-detect the latest xcresult from Xcode DerivedData
+xchtml generate
+
+# Specify a bundle path
+xchtml generate TestReport.xcresult
+xchtml generate /path/to/MyRun.xcresult
+
+# Custom output directory
+xchtml generate TestReport.xcresult -o ./my-reports
+
+# Show version
+xchtml --version
+```
+
+### Legacy mode flags
+
+For backward compatibility with the original script:
+
+```bash
+xchtml generate --mode auto
+xchtml generate --mode manual --xcresult TestReport.xcresult
+```
+
+## Output
+
+After a successful run, generated files are written under the output directory (default: `reports/`):
+
+```text
+reports/
+├── report.html              # Main overview dashboard
+└── categories/
+    ├── category-*.html      # Per-category detail pages
+    ├── logs.html            # Failure/skipped log aggregation
+    └── coverage.html        # Code coverage breakdown
+```
+
+Open `reports/report.html` in a browser to explore the full dashboard.
+
 ## Features
 
-- Manual mode: run against a specific .xcresult path or bundle name
-- Auto mode: automatically finds the latest .xcresult from Xcode DerivedData
-- Rich test summary: passed, failed, skipped, duration, pass rate
-- Category breakdown with drill-down pages
-- Failure/skipped log aggregation page
-- Coverage summary and file-level coverage views
-- Top Insights support from xcresult summary when available
+- **Auto mode**: Automatically finds the latest `.xcresult` from Xcode DerivedData
+- **Manual mode**: Target any specific `.xcresult` path or bundle name
+- **Rich test summary**: passed, failed, skipped, duration, pass rate
+- **Category breakdown** with drill-down pages
+- **Failure/skipped log** aggregation page
+- **Coverage summary** and file-level coverage views
+- **Top Insights** support from xcresult summary when available
+- **Zero external dependencies**: only Python stdlib modules
 
 ## Requirements
 
 - macOS
 - Python 3.8+
-- Xcode command line tools available
-- Access to:
-  - xcrun xcresulttool
-  - xcrun xccov
-
-You can verify required tools:
+- Xcode command line tools:
 
 ```bash
 xcrun xcresulttool version
 xcrun xccov --help
 ```
 
-## Project Structure
-
-Key files and folders:
-
-- xchtml.py: main script
-- reports/report.html: generated overview report
-- reports/categories/: generated category pages plus logs and coverage pages
-
-## Setup
-
-1. Clone or download this project.
-2. Open Terminal in the script directory.
-3. Make sure Xcode command line tools are configured.
+If not installed:
 
 ```bash
-cd htmlReportGenerationTool
+xcode-select --install
 ```
-
-No external Python packages are required.
-
-## Usage
-
-### 1) Manual Mode
-
-Use manual mode when you want to target a specific .xcresult bundle.
-
-```bash
-python3 xchtml.py --mode manual --xcresult TestReport.xcresult
-```
-
-You can pass:
-
-- Bundle name
-- Relative path
-- Absolute path
-
-Examples:
-
-```bash
-python3 xchtml.py --mode manual --xcresult ./TestReport.xcresult
-python3 xchtml.py --mode manual --xcresult /path/to/MyRun.xcresult
-```
-
-### 2) Auto Mode
-
-Use auto mode to process the most recently modified .xcresult from Xcode DerivedData.
-
-```bash
-python3 xchtml.py --mode auto
-```
-
-Auto mode scans:
-
-```text
-~/Library/Developer/Xcode/DerivedData
-```
-
-## Output
-
-After a successful run, generated files are written under:
-
-```text
-reports/
-```
-
-Main entry point:
-
-```text
-reports/report.html
-```
-
-Open it in a browser to explore the full dashboard.
 
 ## Typical Workflow
 
-1. Run tests in Xcode.
-2. Generate report in auto mode:
+1. Run tests in Xcode
+2. Generate report:
 
 ```bash
-python3 xchtml.py --mode auto
+xchtml generate
 ```
 
-3. Open reports/report.html.
-4. Share generated HTML artifacts as needed.
+3. Open `reports/report.html`
+4. Share the generated HTML artifacts as needed
+
+## Project Structure
+
+```text
+src/xchtml/
+├── __init__.py    # Package version
+├── cli.py         # CLI entry point (xchtml command)
+└── core.py        # Report generation logic
+```
 
 ## Troubleshooting
 
-### Error: No .xcresult bundle found in Xcode DerivedData
+### No .xcresult bundle found in Xcode DerivedData
 
-- Ensure tests were run from Xcode on this machine.
-- Use manual mode and pass the exact .xcresult path.
-
-### Error: manual mode requires --xcresult
-
-- Provide the --xcresult argument:
-
-```bash
-python3 xchtml.py --mode manual --xcresult <your_bundle>.xcresult
-```
+- Ensure tests were run from Xcode on this machine
+- Provide the path directly: `xchtml generate <path>.xcresult`
 
 ### xcresulttool or xccov command issues
 
@@ -145,7 +129,6 @@ python3 xchtml.py --mode manual --xcresult <your_bundle>.xcresult
 xcode-select --install
 ```
 
-## Notes
+## License
 
-- This repository intentionally uses public-safe branding in generated pages.
-- The script filename is xchtml.py.
+MIT — see [LICENSE](LICENSE) for details.

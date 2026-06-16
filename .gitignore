@@ -1,0 +1,17 @@
+# Virtual environments
+.venv/
+venv/
+
+# Python build artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# macOS
+.DS_Store
+
+# Reports (generated output)
+reports/

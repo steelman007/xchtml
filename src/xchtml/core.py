@@ -3,7 +3,6 @@ import os
 import re
 import sqlite3
 import subprocess
-import argparse
 from datetime import datetime
 from pathlib import Path
 
@@ -274,21 +273,7 @@ def resolve_manual_xcresult(xcresult_input):
     return None
 
 
-def parse_cli_args():
-    parser = argparse.ArgumentParser(
-        description="Generate an HTML report from an .xcresult bundle"
-    )
-    parser.add_argument(
-        "--mode",
-        choices=["auto", "manual"],
-        default="auto",
-        help="auto: pick latest .xcresult from DerivedData, manual: use --xcresult",
-    )
-    parser.add_argument(
-        "--xcresult",
-        help="Path or bundle name for manual mode (e.g. TestReportORG.xcresult)",
-    )
-    return parser.parse_args()
+
 
 
 def load_xcresult_test_results(bundle_path):
@@ -1061,11 +1046,11 @@ def generate_logs_page(categories, output_dir, overview_filename="report.html", 
     return filename, len(log_entries)
 
 
-def generate_html_report(metrics, categories, output_filename="report.html", coverage=None, device_info=None):
+def generate_html_report(metrics, categories, output_filename="report.html", coverage=None, device_info=None, output_dir=None):
     """Generates a beautifully styled, customizable HTML report with charts."""
 
     # Prepare output directories
-    output_dir = Path("reports")
+    output_dir = Path(output_dir) if output_dir else Path("reports")
     categories_dir = output_dir / "categories"
     output_dir.mkdir(parents=True, exist_ok=True)
     categories_dir.mkdir(parents=True, exist_ok=True)
@@ -2444,65 +2429,4 @@ def generate_html_report(metrics, categories, output_filename="report.html", cov
         pass
 
 
-if __name__ == "__main__":
-    metrics = None
-    categories = None
 
-    args = parse_cli_args()
-
-    if args.mode == "manual":
-        if not args.xcresult:
-            print("Error: manual mode requires --xcresult <path-or-name>")
-            print("Example: python3 xchtml.py --mode manual --xcresult TestReportORG.xcresult")
-            exit(1)
-        bundle_path = resolve_manual_xcresult(args.xcresult)
-        if not bundle_path:
-            print(f"Error: Could not resolve xcresult bundle from input: {args.xcresult}")
-            exit(1)
-    else:
-        bundle_path = find_latest_xcresult_in_derived_data()
-        if not bundle_path:
-            print("Error: No .xcresult bundle found in Xcode DerivedData.")
-            print("Tip: use manual mode with --xcresult to specify a local bundle.")
-            exit(1)
-
-    print(f"Loading test results from xcresult bundle ({args.mode} mode): {bundle_path}")
-    xcdata = load_xcresult_test_results(bundle_path)
-    if not xcdata:
-        print("Error: Failed to read test results from xcresult bundle.")
-        exit(1)
-
-    metrics, categories = parse_xcresulttool_results(xcdata)
-
-    db_path = os.path.join(bundle_path, "database.sqlite3")
-    if os.path.exists(db_path):
-        db_results = load_database_test_results(db_path)
-        if db_results:
-            bundle_dir = os.path.dirname(db_path)
-            categories = enrich_categories_with_database_metadata(categories, db_results, bundle_dir)
-
-    if metrics is None or categories is None or not categories:
-        print("Error: No test categories found in the xcresult bundle.")
-        exit(1)
-
-    # Extract coverage and device info when available
-    coverage = load_coverage_data(bundle_path)
-    device_info = get_simulator_info_from_db(db_path) if os.path.exists(db_path) else {}
-
-    # Read the test-results summary once; it feeds both the wall-clock duration
-    # and the Top Insights section.
-    test_summary = load_test_summary(bundle_path)
-
-    # Wall-clock run duration (matches Xcode's "Ran for ...") overrides the
-    # summed per-test duration for the overall report figure.
-    wall_duration = get_wall_clock_duration(test_summary)
-    if wall_duration is not None:
-        metrics['wall_duration'] = wall_duration
-
-    # Top Insights (mirrors Xcode's Top Insights section in the result bundle)
-    metrics['top_insights'] = get_top_insights(test_summary)
-
-    # Generate the HTML report and per-category pages
-    generate_html_report(metrics, categories, "report.html", coverage=coverage, device_info=device_info)
-
-    print(f"Summary: {metrics['passed']} passed, {metrics['failed']} failed, {metrics['skipped']} skipped out of {metrics['total']} tests")
