@@ -10,13 +10,21 @@ Created by Gram.
 
 ## Install
 
-### Homebrew (recommended)
+### Quick Install
 
 ```bash
-brew install igram7/xchtml
+curl -fsSL https://raw.githubusercontent.com/igram7/xchtml/main/install.sh | bash
 ```
 
-### From source
+### Manual Install
+
+```bash
+brew tap igram7/xchtml
+brew trust igram7/xchtml
+brew install xchtml
+```
+
+### From Source
 
 ```bash
 git clone https://github.com/igram7/xchtml.git
