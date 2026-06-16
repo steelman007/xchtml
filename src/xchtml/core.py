@@ -99,117 +99,6 @@ def load_attachment_metadata(bundle_path: str, payload_ref: Optional[str]) -> Di
     except Exception:
         return {}
 
-    return {}
-
-
-def normalize_requirements(requirements):
-    if requirements is None:
-        return []
-    if isinstance(requirements, str):
-        r = requirements.strip()
-        if not r:
-            return []
-        if r.upper() in ('SRS_ID', 'SRS-ID', 'SRSID'):
-            return []
-        return [r]
-    normalized = []
-    if isinstance(requirements, dict) and '_value' in requirements:
-        return normalize_requirements(requirements['_value'])
-    if isinstance(requirements, list):
-        for req in requirements:
-            if isinstance(req, dict) and '_value' in req:
-                req = req['_value']
-            if isinstance(req, str) and req.strip():
-                r = req.strip()
-                if r.upper() in ('SRS_ID', 'SRS-ID', 'SRSID'):
-                    continue
-                normalized.append(r)
-    return normalized
-
-
-def parse_srs_id_from_metadata(metadata, default_id):
-    if not isinstance(metadata, dict):
-        return default_id
-    
-    # Prefer explicit SRS fields when they contain a concrete identifier
-    for key in ('srs_id', 'SRS_ID', 'srsId'):
-        val = metadata.get(key)
-        if isinstance(val, str):
-            v = val.strip()
-            if v and v.upper() not in ('SRS_ID', 'SRS-ID', 'SRSID'):
-                return v
-
-    # Inspect requirements for likely SRS identifiers. Prefer values that contain
-    # digits or a dash (e.g. APP-1235) and skip generic placeholders like "SRS_ID".
-    requirements = normalize_requirements(metadata.get('requirements'))
-    candidates = []
-    for req in requirements:
-        if not isinstance(req, str):
-            continue
-        r = req.strip()
-        if not r:
-            continue
-        ru = r.upper()
-        if ru in ('SRS_ID', 'SRS-ID', 'SRSID'):
-            continue
-        # Heuristic: prefer identifiers that contain digits or a hyphen
-        if any(ch.isdigit() for ch in r) or '-' in r:
-            return r
-        candidates.append(r)
-
-    # Fallback to any candidate starting with SRS/REQ (excluding placeholders)
-    for c in candidates:
-        cu = c.upper()
-        if cu.startswith('SRS') or cu.startswith('REQ'):
-            return c
-
-    return default_id
-
-
-def extract_metadata_from_node(node):
-    if not isinstance(node, dict):
-        return {}
-
-    metadata = {}
-    
-    if isinstance(node.get('metadata'), dict):
-        metadata = node['metadata']
-        if metadata:
-            return metadata
-
-    attachments = node.get('attachments')
-    if isinstance(attachments, dict) and '_values' in attachments:
-        attachments = attachments['_values']
-
-    if isinstance(attachments, list):
-        for attachment in attachments:
-            if not isinstance(attachment, dict):
-                continue
-            real_name = str(attachment.get('name', '')).lower()
-            uri = str(attachment.get('uniformTypeIdentifier', '')).lower()
-            if 'test metadata' in real_name or 'json' in uri or str(attachment.get('filenameOverride', '')).lower().endswith('.json'):
-                payload = attachment.get('payload') or attachment.get('content') or attachment.get('string') or attachment.get('data')
-                if isinstance(payload, dict):
-                    return payload
-                if isinstance(payload, str):
-                    try:
-                        return json.loads(payload)
-                    except Exception:
-                        pass
-    
-    for value in node.values():
-        if isinstance(value, dict):
-            metadata = extract_metadata_from_node(value)
-            if metadata:
-                return metadata
-        elif isinstance(value, list):
-            for item in value:
-                metadata = extract_metadata_from_node(item)
-                if metadata:
-                    return metadata
-
-    return {}
-
 
 def find_latest_xcresult_in_derived_data(derived_data_root: Optional[str] = None) -> Optional[str]:
     """Finds the most recently modified .xcresult bundle in Xcode DerivedData."""
@@ -878,7 +767,7 @@ def generate_logs_page(categories: Optional[Dict[str, List[Dict[str, Any]]]], ou
         error_html = ""
         if e['error']:
             error_html = f"""
-                    <div class=\"mt-3 p-3 bg-slate-900 text-slate-100 rounded-lg text-xs font-mono whitespace-pre-wrap break-words overflow-x-auto\">{_html_escape(e['error'])}</div>"""
+                    <div class=\"mt-3 p-3 bg-slate-900 text-slate-100 rounded-lg text-xs font-mono whitespace-pre-wrap break-words overflow-x-auto\">{html_escape(e['error'])}</div>"""
 
         searchable = f"{e['name']} {e['category']} {e['srs_id']} {e['error']}".lower().replace('"', '')
         srs_value = str(e.get('srs_id') or '').strip()
@@ -886,7 +775,7 @@ def generate_logs_page(categories: Optional[Dict[str, List[Dict[str, Any]]]], ou
             srs_value = ''
         srs_html = ""
         if srs_value:
-            srs_html = f'<div class="mt-2 text-xs text-slate-600"><span class="font-semibold text-slate-500">SRS ID:</span> <code class="bg-gray-100 px-2 py-0.5 rounded">{_html_escape(srs_value)}</code></div>'
+            srs_html = f'<div class="mt-2 text-xs text-slate-600"><span class="font-semibold text-slate-500">SRS ID:</span> <code class="bg-gray-100 px-2 py-0.5 rounded">{html_escape(srs_value)}</code></div>'
 
         rows_html += f"""
                 <div class=\"log-entry border-l-4 {accent} bg-white rounded-r-xl shadow-sm border border-gray-200 p-4\" data-status=\"{status}\" data-category=\"{e['category'].lower()}\" data-search=\"{searchable}\">
@@ -1165,7 +1054,7 @@ def generate_html_report(metrics: Dict[str, Any], categories: Dict[str, List[Dic
                 snippet = e['error'].replace('\n', ' ')
                 if len(snippet) > 160:
                     snippet = snippet[:160] + '…'
-                err_preview = f"<p class=\"mt-1.5 text-xs text-slate-600 font-mono break-words\">{_html_escape(snippet)}</p>"
+                err_preview = f"<p class=\"mt-1.5 text-xs text-slate-600 font-mono break-words\">{html_escape(snippet)}</p>"
             preview_rows += f"""
                         <div class=\"border-l-4 {accent} bg-slate-50 rounded-r-lg px-3 py-2\">
                             <div class=\"flex items-center justify-between gap-2\">
@@ -1498,14 +1387,14 @@ def generate_html_report(metrics: Dict[str, Any], categories: Dict[str, List[Dic
                 l_error_html = ""
                 if e['error']:
                     l_error_html = f"""
-                            <div class=\"mt-3 p-3 bg-slate-900 text-slate-100 rounded-lg text-xs font-mono whitespace-pre-wrap break-words overflow-x-auto\">{_html_escape(e['error'])}</div>"""
+                            <div class=\"mt-3 p-3 bg-slate-900 text-slate-100 rounded-lg text-xs font-mono whitespace-pre-wrap break-words overflow-x-auto\">{html_escape(e['error'])}</div>"""
 
                 cat_srs = str(e.get('srs_id') or '').strip()
                 if cat_srs.upper() in ('SRS_ID', 'SRS-ID', 'SRSID'):
                     cat_srs = ''
                 cat_srs_html = ""
                 if cat_srs:
-                    cat_srs_html = f'<div class="mt-2 text-xs text-slate-600"><span class="font-semibold text-slate-500">SRS ID:</span> <code class="bg-gray-100 px-2 py-0.5 rounded">{_html_escape(cat_srs)}</code></div>'
+                    cat_srs_html = f'<div class="mt-2 text-xs text-slate-600"><span class="font-semibold text-slate-500">SRS ID:</span> <code class="bg-gray-100 px-2 py-0.5 rounded">{html_escape(cat_srs)}</code></div>'
 
                 cat_log_rows += f"""
                         <div class=\"border-l-4 {l_accent} bg-white rounded-r-xl shadow-sm border border-gray-200 p-4\">
